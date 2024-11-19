@@ -1,0 +1,4 @@
+# Ignore model files that are auto-generated
+node_modules/**
+out/**
+out/**

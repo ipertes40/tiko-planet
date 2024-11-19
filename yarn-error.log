@@ -1,0 +1,44 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe E:\envionment\node-v16.20.0-win-x64\node_global\node_modules\yarn\bin\yarn.js add electron-squirrel-startup
+
+PATH: 
+  E:\ide\code\tiko-planet\node_modules\.bin;E:\ide\code\tiko-planet\node_modules\.bin;E:\ide\code\node_modules\.bin;E:\ide\node_modules\.bin;E:\node_modules\.bin;E:\envionment\node-v16.20.0-win-x64\node_global\node_modules\npm\node_modules\@npmcli\run-script\lib\node-gyp-bin;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\VMware\VMware Workstation\bin\;C:\Program Files\PlasticSCM5\server;C:\Program Files\PlasticSCM5\client;E:\envionment\jdk8\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\dotnet\;E:\tool\Bandzip\Bandizip;C:\Program Files\MySQL\MySQL Server 8.0\bin;E:\ide\rely\apache-maven-3.9.2-bin\apache-maven-3.9.2\bin;E:\ide\rely\Git\cmd;C:\Program Files (x86)\ZeroTier\One\;C:\Users\ipertes\AppData\Roaming\nvm;C:\Program Files\nodejs;C:\Users\ipertes\AppData\Local\Programs\Python\Python310\Scripts\;C:\Users\ipertes\AppData\Local\Programs\Python\Python310\;C:\Program Files\MySQL\MySQL Shell 8.0\bin\;C:\Users\ipertes\AppData\Local\Microsoft\WindowsApps;E:\ide\软件\VSCode\Microsoft VS Code\bin;E:\ide\软件\IDEA\IntelliJ IDEA 2022.3.3\bin;;E:\tool\Bandzip\;E:\ide\软件\Vscode\Microsoft VS Code\bin;C:\Users\ipertes\AppData\Roaming\nvm;C:\Program Files\nodejs;E:\envionment\node-v16.20.0-win-x64\node_global;
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  16.20.2
+
+Platform: 
+  win32 x64
+
+Trace: 
+  Error: ENOENT: no such file or directory, copyfile 'C:\Users\ipertes\AppData\Local\Yarn\Cache\v6\npm-jsonfile-4.0.0-8771aae0799b64076b76640fca058f9c10e33ecb-integrity\node_modules\jsonfile\LICENSE' -> 'E:\ide\code\tiko-planet\node_modules\electron\node_modules\jsonfile\LICENSE'
+
+npm manifest: 
+  {
+    "name": "tiko-planet",
+    "version": "1.0.0",
+    "description": "A tool to number ourselves through the love of oc",
+    "main": "main.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "start": "electron-forge start",
+      "package": "electron-forge package",
+      "make": "electron-forge make"
+    },
+    "author": "ipertes",
+    "license": "ISC",
+    "devDependencies": {
+      "@electron-forge/cli": "^7.5.0",
+      "electron": "^33.2.0"
+    },
+    "dependencies": {}
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
