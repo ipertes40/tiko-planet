@@ -17,25 +17,6 @@
       </div>
     </template>
   </MasonryList>
-
-    <!-- <MasonryGrid
-    :fetchData="fetchArticles"
-    :columnCount="5"
-    :pageSize="10"
-  >
-    <template #card="{ item }">
-      <div style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <img :src="item.image" style="width: 100%; display: block;" />
-        <div style="padding: 8px;">
-          <h4 style="margin: 0;">{{ item.title }}</h4>
-        </div>
-      </div>
-    </template>
-
-    <template #skeleton>
-      <div style="background: #eee; width: 100%; height: 100%; border-radius: 8px;"></div>
-    </template>
-  </MasonryGrid> -->
 </template>
 
 <script setup lang="ts">

@@ -6,41 +6,42 @@ let index = 0
 
 const routes = [
   {
-    url: '/article',
+    url: '/articles',
     method: 'get',
     response: () => {
-      // 每次生成30个，ID从 lastId+1 开始
       const startId = lastId + 1
-      const height2 =  Mock.mock('@integer(200, 600)')
-      const width2 = Mock.mock('@integer(300, 800)')
+      console.log('mock')
 
       const newData = Mock.mock({
-        'list|2': [
+        'list|20': [
           {
-            // 动态计算ID
-            id: function() {
+            id: function () {
               return startId + index++
             },
             title: '@ctitle(8, 20)',
             content: '@cparagraph(3, 8)',
-            image: function() {
-              const width = width2
-              const height = height2
-              return `https://picsum.photos/${width}/${height}?random=${this.id}`
+            width: function () {
+              return Mock.mock('@integer(300, 800)')
             },
-            height: height2,
-            width: width2
+            height: function () {
+              return Mock.mock('@integer(200, 600)')
+            },
+            image: function () {
+              return `https://picsum.photos/${this.width}/${this.height}?random=${this.id}`
+            }
           }
         ]
       })
-      
-      // 更新最后ID（30是固定数量）
-      lastId += 2
-      index= 0
-      
+
+      lastId += 20
+      index = 0
+      console.log('mock===>', {
+        code: 200,
+        data: newData.list
+      })
       return {
         code: 200,
-        data: newData
+        data: {list : newData.list}
       }
     }
   }
