@@ -175,60 +175,73 @@ export default defineComponent({
         if (columnWidth.value === 0) {
           calculateLayoutParameters();
         }
+        const newArticles: Article[] = [];
 
-        const getPositions = (item) => {
-          const minHeight = Math.min(...columnsHeight.value);
-          const columnIndex = columnsHeight.value.indexOf(minHeight);
+data.forEach(item => {
+  const layout = calculateItemPosition(item); // 直接计算位置
+  newArticles.push({
+    ...item,
+    ...layout,
+    skeleton: false,
+    loaded: false
+  });
+});
 
-          const left = columnIndex * (columnWidth.value + props.columnGap);
-          const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.columnGap : 0);
+articles.value.push(...newArticles);
+currentPage.value++;
+        // const getPositions = (item) => {
+        //   const minHeight = Math.min(...columnsHeight.value);
+        //   const columnIndex = columnsHeight.value.indexOf(minHeight);
 
-          // 提前更新列高度（为骨架图预留空间）
-          const skeletonHeight = (item.height / item.width) * columnWidth.value;
-          columnsHeight.value[columnIndex] = top + skeletonHeight;
+        //   const left = columnIndex * (columnWidth.value + props.columnGap);
+        //   const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.columnGap : 0);
 
-          return { left, top };
-        }
+        //   // 提前更新列高度（为骨架图预留空间）
+        //   const skeletonHeight = (item.height / item.width) * columnWidth.value;
+        //   columnsHeight.value[columnIndex] = top + skeletonHeight;
 
-        // 更新容器整体高度
-        listHeight.value = Math.max(...columnsHeight.value);
-        const gridMap = [] as any
-        // 2. 创建带有正确位置的骨架图
-        data.forEach((item, index) => {
-          console.log('add1 ')
-          const layout = getPositions(item)
-          gridMap[index] = layout
+        //   return { left, top };
+        // }
 
-          const skeletonItem = {
-            ...item,
-            id: `skeleton-${item.id}`,
-            skeleton: true,
-            left: layout.left,  // 直接设置正确位置
-            top: layout.top
-          }
-          articles.value.push(skeletonItem);
-        }
+        // // 更新容器整体高度
+        // listHeight.value = Math.max(...columnsHeight.value);
+        // const gridMap = [] as any
+        // // 2. 创建带有正确位置的骨架图
+        // data.forEach((item, index) => {
+        //   console.log('add1 ')
+        //   const layout = getPositions(item)
+        //   gridMap[index] = layout
 
-        );
+        //   const skeletonItem = {
+        //     ...item,
+        //     id: `skeleton-${item.id}`,
+        //     skeleton: true,
+        //     left: layout.left,  // 直接设置正确位置
+        //     top: layout.top
+        //   }
+        //   articles.value.push(skeletonItem);
+        // }
+
+        // );
 
 
-        const preloadTasks = data.map((item, index) => {
-          const positionedItem = {
-            ...item,
-            left: gridMap[index].left,
-            top: gridMap[index].top,
-            // skeleton: true, 加上之后就不调用img了... 这样的话img的加载也就没了。
-            preload: false
-          };
+        // const preloadTasks = data.map((item, index) => {
+        //   const positionedItem = {
+        //     ...item,
+        //     left: gridMap[index].left,
+        //     top: gridMap[index].top,
+        //     // skeleton: true, 加上之后就不调用img了... 这样的话img的加载也就没了。
+        //     preload: false
+        //   };
 
-          const skeletonIndex = articles.value.findIndex(a => a.id === `skeleton-${item.id}`);
-          if (skeletonIndex > -1) {
-            articles.value.splice(skeletonIndex, 1, positionedItem);
-          }
-          return positionedItem;
-        });
-        await Promise.all(preloadTasks);
-        currentPage.value++;
+        //   const skeletonIndex = articles.value.findIndex(a => a.id === `skeleton-${item.id}`);
+        //   if (skeletonIndex > -1) {
+        //     articles.value.splice(skeletonIndex, 1, positionedItem);
+        //   }
+        //   return positionedItem;
+        // });
+        // await Promise.all(preloadTasks);
+        // currentPage.value++;
       } finally {
         loading.value = false;
       }
