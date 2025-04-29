@@ -35,12 +35,8 @@ const routes = [
 
       lastId += 20
       index = 0
-      console.log('mock===>', {
-        code: 200,
-        data: newData.list
-      })
       return {
-        code: 200,
+        code: 0,
         data: {list : newData.list}
       }
     }

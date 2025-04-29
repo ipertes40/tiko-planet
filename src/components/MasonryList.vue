@@ -102,6 +102,11 @@ export default defineComponent({
     const listHeight = ref(0);
     let observer: IntersectionObserver | null = null;
 
+    const handleClick = () => {
+      console.log('点了一下')
+
+    }
+
     const onImageLoad = (id: string, event: Event) => {
       const imgElement = event.target as HTMLImageElement;
       const article = articles.value.find(a => a.id === id);
@@ -326,7 +331,8 @@ currentPage.value++;
       listHeight,
       onImageLoad,
       onImageError,
-      loadNextPage
+      loadNextPage,
+      handleClick
     };
   }
 });

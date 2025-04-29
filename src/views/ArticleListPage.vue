@@ -33,9 +33,9 @@ const fetchArticles = async (page: number, pageSize: number) => {
     const response = await request.get(
       `/articles?page=${page}&pageSize=${pageSize}`
     );
-    console.log(response)
+    console.log("response==>",response)
     const {data} = response;
-    return { data: data.data.list };
+    return { data: data.list };
   } catch (error) {
     console.error('请求失败:', error);
     return { data: [] };
