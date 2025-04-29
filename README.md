@@ -12,10 +12,10 @@ Learn more about the recommended Project Setup and IDE Support in the [Vue Docs 
 
 tips： 
 MasonryList-bk为无法翻页的纯css实现代码（利用grid布局和column属性，翻页后会重排布局，不做列表组件使用，留档学习）
-其余为个人实现 可以实现瀑布流样式排版，但对于加载不友好，弃用，改为选用依赖库。
+其余为个人实现
 
 库依赖： 
-    vue-waterfall-plugin-next
+    
 
 参考:
 https://blog.mzh.ren/zh/posts/2022/11/pinterest-masonry-layout/

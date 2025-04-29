@@ -6,11 +6,11 @@
           transform: `translate(${article.left}px, ${article.top}px)`,
           width: `${columnWidth}px`
         }">
-          <div :id="article.id" v-if="article.skeleton" class="skeleton-box" :style="{ height: `${article.height / article.width * columnWidth}px` }">
+          <div :id="article.id" v-if="article.skeleton" class="skeleton-box"
+            :style="{ height: `${article.height / article.width * columnWidth}px` }">
           </div>
           <template v-else>
-            <div :style="{ height: !article.preload && article.imageError ? `${(article.height / article.width) * columnWidth}px` : '' }"
-              class="article-wrapper">
+            <div :style="{ height: `${(article.height / article.width) * columnWidth}px` }" class="article-wrapper">
               <img v-lazy="article.image" :alt="article.title" class="article-image"
                 :class="{ loading: !article.loaded, error: article.imageError }" @load="onImageLoad(article.id, $event)"
                 @error="onImageError(article)" />
@@ -103,10 +103,13 @@ export default defineComponent({
       const imgElement = event.target as HTMLImageElement;
       const article = articles.value.find(a => a.id === id);
 
+      console.log('onImageSuccess--->', article.id)
+      console.log('onImageSuccess--->', article.title)
+
       if (article) {
         article.loaded = true;
+        article.skeleton = false
         // 计算正确的高度
-        const aspectHeight = (article.height / article.width) * columnWidth.value;
         const updatedItem = calculateItemPosition({
           ...article
         });
@@ -143,35 +146,11 @@ export default defineComponent({
       return { ...item, left, top };
     };
 
-    // 下载某个图片
-    const preloadSingleImage = (item: Article): Promise<Article> => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        const lqip = item.image.replace('/regular/', '/thumb/');
-        img.src = lqip;
-        img.onload = () => {
-          resolve({
-            ...item,
-            // width: img.naturalWidth,
-            // height: img.naturalHeight
-          });
-
-          const highImg = new Image();
-          highImg.src = item.image;
-          highImg.onload = () => {
-            const found = articles.value.find(a => a.id === item.id);
-            if (found) {
-              found.image = item.image;
-            }
-          };
-        };
-        img.onerror = reject;
-      });
-    };
     const onImageError = (item) => {
       // console.log('error ---> id ', item.id)
       console.log('onImageError--->', item.id)
       item.imageError = true; // 失败了就隐藏图片
+      item.skeleton = false
 
       // 如果图片加载失败，可以尝试重新设置一个默认高度（可选）
       const updatedItem = calculateItemPosition({ ...item });
@@ -228,53 +207,26 @@ export default defineComponent({
             top: layout.top
           }
           articles.value.push(skeletonItem);
-
         }
 
         );
 
-        // 3. 预加载图片并替换骨架图
-        const preloadTasks = data.map(async (item, index) => {
-          try {
-            const loadedItem = await preloadSingleImage(item);
-            const aspectHeight = (loadedItem.height! / loadedItem.width!) * columnWidth.value;
 
-            // 保持骨架图计算好的位置
-            const positionedItem = {
-              ...loadedItem,
-              left: gridMap[index].left,
-              top: gridMap[index].top,
-              preload: true
-            };
+        const preloadTasks = data.map((item, index) => {
+          const positionedItem = {
+            ...item,
+            left: gridMap[index].left,
+            top: gridMap[index].top,
+            // skeleton: true, 加上之后就不调用img了... 这样的话img的加载也就没了。
+            preload: false
+          };
 
-            const skeletonIndex = articles.value.findIndex(a => a.id === `skeleton-${item.id}`);
-            if (skeletonIndex > -1) {
-              articles.value.splice(skeletonIndex, 1, positionedItem);
-            }
-
-            // 需要重新计算列高度（因为实际图片高度可能和骨架图不同）
-            recalculateColumnsHeight();
-
-            return positionedItem;
-          } catch (error) {
-            console.error('Image preload failed:', item);
-            // 保持骨架图计算好的位置，仅替换内容
-            const positionedItem = {
-              ...item,
-              left: gridMap[index].left,
-              top: gridMap[index].top,
-              preload: false
-            };
-
-            const skeletonIndex = articles.value.findIndex(a => a.id === `skeleton-${item.id}`);
-            if (skeletonIndex > -1) {
-              articles.value.splice(skeletonIndex, 1, positionedItem);
-            }
-
-            return positionedItem;
+          const skeletonIndex = articles.value.findIndex(a => a.id === `skeleton-${item.id}`);
+          if (skeletonIndex > -1) {
+            articles.value.splice(skeletonIndex, 1, positionedItem);
           }
+          return positionedItem;
         });
-
         await Promise.all(preloadTasks);
         currentPage.value++;
       } finally {
