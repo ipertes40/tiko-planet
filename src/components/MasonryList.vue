@@ -2,23 +2,18 @@
   <div class="home-container" ref="container">
     <ul v-infinite-scroll="loadNextPage" class="infinite-list">
       <div class="list-container" :style="{ height: `${listHeight}px` }">
-        <div v-for="(article, index) in articles" 
-             :key="article.id" 
-             class="article-item" 
-             :style="{
-               transform: `translate(${article.left}px, ${article.top}px)`,
-               width: `${columnWidth}px`
-             }">
-          <div :id="article.id" v-if="article.skeleton" class="skeleton-box" :style="{ height: `${article.height}px` }">
+        <div v-for="(article, index) in articles" :key="article.id" class="article-item" :style="{
+          transform: `translate(${article.left}px, ${article.top}px)`,
+          width: `${columnWidth}px`
+        }">
+          <div :id="article.id" v-if="article.skeleton" class="skeleton-box" :style="{ height: `${article.height / article.width * columnWidth}px` }">
           </div>
           <template v-else>
-            <div :style="{ height: !article.preload && article.imageError ? `${(3 / 4) * columnWidth}px` : '' }" class="article-wrapper">
-              <img v-lazy="article.image" 
-                   :alt="article.title" 
-                   class="article-image" 
-                   :class="{ loading: !article.loaded, error: article.imageError }" 
-                   @load="onImageLoad(article.id, $event)"
-                   @error="onImageError(article)" />
+            <div :style="{ height: !article.preload && article.imageError ? `${(article.height / article.width) * columnWidth}px` : '' }"
+              class="article-wrapper">
+              <img v-lazy="article.image" :alt="article.title" class="article-image"
+                :class="{ loading: !article.loaded, error: article.imageError }" @load="onImageLoad(article.id, $event)"
+                @error="onImageError(article)" />
               <!-- 蒙层 -->
               <div class="overlay text-content" @click="handleClick(article.link)">
                 <span>{{ article.title }}</span> <!-- 这里可以是自定义内容，比如标题 -->
@@ -57,13 +52,11 @@ type Article = {
   image: string;
   title: string;
   content: string;
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
   left?: number;
   top?: number;
   loaded?: boolean;
-  originHeight?: number,
-  originWidth?: number,
   skeleton?: boolean,
   imageError?: boolean,
   preload?: boolean
@@ -112,17 +105,10 @@ export default defineComponent({
 
       if (article) {
         article.loaded = true;
-        // 获取图片真实尺寸
-        const naturalWidth = imgElement.naturalWidth;
-        const naturalHeight = imgElement.naturalHeight;
-
         // 计算正确的高度
-        const aspectHeight = (naturalHeight / naturalWidth) * columnWidth.value;
+        const aspectHeight = (article.height / article.width) * columnWidth.value;
         const updatedItem = calculateItemPosition({
-          ...article,
-          height: aspectHeight,
-          originHeight: naturalHeight,
-          originWidth: naturalWidth
+          ...article
         });
 
         // 更新数组
@@ -148,7 +134,7 @@ export default defineComponent({
       const left = columnIndex * (columnWidth.value + props.columnGap);
       const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.columnGap : 0);
 
-      const newHeight = item.height || 0;
+      const newHeight = (item.height / item.width) * columnWidth.value;
       columnsHeight.value[columnIndex] = top + newHeight;
 
       // 更新容器整体高度（最大高度）
@@ -166,8 +152,8 @@ export default defineComponent({
         img.onload = () => {
           resolve({
             ...item,
-            width: img.naturalWidth,
-            height: img.naturalHeight
+            // width: img.naturalWidth,
+            // height: img.naturalHeight
           });
 
           const highImg = new Image();
@@ -188,15 +174,14 @@ export default defineComponent({
       item.imageError = true; // 失败了就隐藏图片
 
       // 如果图片加载失败，可以尝试重新设置一个默认高度（可选）
-      const defaultHeight = columnWidth.value * 0.75
-      const updatedItem = calculateItemPosition({ ...item, height: defaultHeight });
+      const updatedItem = calculateItemPosition({ ...item });
       const index = articles.value.findIndex(a => a.id === item.id);
       if (index > -1) {
         articles.value.splice(index, 1, updatedItem);
       }
       resetLayout()
     }
-    
+
     const loadNextPage = async () => {
       if (loading.value || noMore.value) return;
       try {
@@ -212,20 +197,6 @@ export default defineComponent({
           calculateLayoutParameters();
         }
 
-        // 1. 先计算所有骨架图应该出现的位置 这里一起计算了 不好不好！
-        // const skeletonPositions = data.map((item) => {
-        //   const minHeight = Math.min(...columnsHeight.value);
-        //   const columnIndex = columnsHeight.value.indexOf(minHeight);
-
-        //   const left = columnIndex * (columnWidth.value + props.columnGap);
-        //   const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.columnGap : 0);
-
-        //   // 提前更新列高度（为骨架图预留空间）
-        //   const skeletonHeight = (item.height/ item.width) * columnWidth.value;
-        //   columnsHeight.value[columnIndex] = top + skeletonHeight;
-
-        //   return { left, top };
-        // });
         const getPositions = (item) => {
           const minHeight = Math.min(...columnsHeight.value);
           const columnIndex = columnsHeight.value.indexOf(minHeight);
@@ -234,7 +205,7 @@ export default defineComponent({
           const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.columnGap : 0);
 
           // 提前更新列高度（为骨架图预留空间）
-          const skeletonHeight = (item.height/ item.width) * columnWidth.value;
+          const skeletonHeight = (item.height / item.width) * columnWidth.value;
           columnsHeight.value[columnIndex] = top + skeletonHeight;
 
           return { left, top };
@@ -242,26 +213,25 @@ export default defineComponent({
 
         // 更新容器整体高度
         listHeight.value = Math.max(...columnsHeight.value);
-        const gridMap = []
+        const gridMap = [] as any
         // 2. 创建带有正确位置的骨架图
         data.forEach((item, index) => {
           console.log('add1 ')
           const layout = getPositions(item)
           gridMap[index] = layout
 
-          const skeletonItem = {...item,
+          const skeletonItem = {
+            ...item,
             id: `skeleton-${item.id}`,
             skeleton: true,
-            height: item.height / item.width * columnWidth.value,
-            width: columnWidth.value,
             left: layout.left,  // 直接设置正确位置
-            top: layout.top    
+            top: layout.top
           }
           articles.value.push(skeletonItem);
 
         }
-      
-      );
+
+        );
 
         // 3. 预加载图片并替换骨架图
         const preloadTasks = data.map(async (item, index) => {
@@ -272,11 +242,8 @@ export default defineComponent({
             // 保持骨架图计算好的位置
             const positionedItem = {
               ...loadedItem,
-              height: aspectHeight,
               left: gridMap[index].left,
               top: gridMap[index].top,
-              originHeight: loadedItem.height,
-              originWidth: loadedItem.width,
               preload: true
             };
 
@@ -294,11 +261,8 @@ export default defineComponent({
             // 保持骨架图计算好的位置，仅替换内容
             const positionedItem = {
               ...item,
-              height: 0.75 * columnWidth.value,
               left: gridMap[index].left,
               top: gridMap[index].top,
-              originHeight: 3,
-              originWidth: 4,
               preload: false
             };
 
@@ -359,8 +323,7 @@ export default defineComponent({
       calculateLayoutParameters();
       columnsHeight.value = new Array(props.columnCount).fill(0);
       articles.value = articles.value.map(item => {
-        const aspectHeight = (item.originHeight / item.originWidth) * columnWidth.value
-        return calculateItemPosition({ ...item, height: aspectHeight },)
+        return calculateItemPosition({ ...item },)
       });
     });
 
