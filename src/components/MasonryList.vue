@@ -77,6 +77,9 @@ export default defineComponent({
     columnGap: {
       type: Number,
       default: 20
+    },rowGap: {
+      type: Number,
+      default: 20
     },
     fetchData: {
       type: Function as PropType<FetchFunction>,
@@ -135,7 +138,7 @@ export default defineComponent({
       const columnIndex = columnsHeight.value.indexOf(minHeight);
 
       const left = columnIndex * (columnWidth.value + props.columnGap);
-      const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.columnGap : 0);
+      const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.rowGap : 0);
 
       const newHeight = (item.height / item.width) * columnWidth.value;
       columnsHeight.value[columnIndex] = top + newHeight;

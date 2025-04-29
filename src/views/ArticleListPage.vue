@@ -1,7 +1,9 @@
 <template>
   <MasonryList
     :fetch-data="fetchArticles"
-    :columnGap="12"
+    :columnGap="14"
+    :rowGap="32"
+
     :column-count="columnCount"
     :page-size="5"
     :gutter="16"

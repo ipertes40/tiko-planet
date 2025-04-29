@@ -24,7 +24,7 @@ const routes = [
               return Mock.mock('@integer(300, 800)')
             },
             height: function () {
-              return Mock.mock('@integer(200, 600)')
+              return Mock.mock('@integer(600, 900)')
             },
             image: function () {
               return `https://picsum.photos/${this.width}/${this.height}?random=${this.id}`
