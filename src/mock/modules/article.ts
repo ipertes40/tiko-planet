@@ -15,7 +15,7 @@ const routes = [
       const width2 = Mock.mock('@integer(300, 800)')
 
       const newData = Mock.mock({
-        'list|5': [
+        'list|2': [
           {
             // 动态计算ID
             id: function() {
@@ -35,7 +35,7 @@ const routes = [
       })
       
       // 更新最后ID（30是固定数量）
-      lastId += 5
+      lastId += 2
       index= 0
       
       return {
