@@ -2,29 +2,9 @@
   <div class="home-container" ref="container">
     <!-- <ul v-infinite-scroll="loadNextPage" class="infinite-list"> -->
     <div class="list-container" :style="{ height: `${listHeight}px` }">
-      <div v-for="(article, index) in articles" :key="article.id" class="article-item" :style="{
-        transform: `translate(${article.left}px, ${article.top}px)`,
-        width: `${columnWidth}px`
-      }">
-        <div :style="{ height: `${(article.height / article.width) * columnWidth}px` }" class="article-wrapper">
-          <img v-lazy="article.image" :alt="article.title" class="article-image"
-            :class="{ loading: !article.loaded, error: article.imageError }" @load="onImageLoad(article.id, $event)"
-            @error="onImageError(article)" />
-          <!-- 蒙层 -->
-          <div class="overlay text-content" @click="handleClick(article.link)">
-            <span>{{ article.title }}</span> <!-- 这里可以是自定义内容，比如标题 -->
-          </div>
-        </div>
-        <div class="bottom-info" :id="`bottom-info-${article.id}`">
-          <div class="left-part">
-            <div class="title">{{ article.title }}</div>
-            <div class="user-name">{{ article.userName }}</div>
-          </div>
-          <div class="right-part">
-
-          </div>
-        </div>
-      </div>
+      <MasonryCard v-for="article in articles" :key="article.id" :article="article" :columnWidth="columnWidth"  :ref="cardRefs"
+        @image-load="onImageLoad" @image-error="onImageError" @click="handleClick"   @height="onHeightReported"
+        />
       <div ref="trigger" class="observer-trigger">
         <span v-if="loading">加载中...</span>
         <span v-else-if="noMore">没有更多了</span>
@@ -37,10 +17,10 @@
 
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { defineComponent, ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import type { PropType } from 'vue';
 // import Popover.vue from ''
-
+import MasonryCard from '@/components/MasonryCard.vue';
 // 懒加载指令
 const lazyLoadDirective = {
   mounted(el: HTMLImageElement, binding: any) {
@@ -77,6 +57,9 @@ type FetchFunction = (page: number, pageSize: number) => Promise<{ data: Article
 
 export default defineComponent({
   name: 'MasonryList',
+  components: {
+    MasonryCard
+  },
   directives: {
     lazy: lazyLoadDirective
   },
@@ -112,78 +95,73 @@ export default defineComponent({
     const columnsHeight = ref<number[]>([]);
     const listHeight = ref(0);
     let observer: IntersectionObserver | null = null;
+    const cardRefs = ref<InstanceType<typeof MasonryCard>[]>([]);
 
     const handleClick = () => {
       console.log('点了一下')
 
     }
+    watch(articles, () => {
+      nextTick(() => {
+        cardRefs.value = cardRefs.value.filter(Boolean); // 过滤掉空的
+      });
+    });
+    const pendingHeights = new Map<number, number>();
+
+    const onHeightReported = (article: Article, height: number) => {
+      console.log('height===> ', height)
+      const updated = calculateItemPosition(article, height)
+        const index = articles.value.findIndex(a => a.id === article.id)
+        if (index > -1) {
+          articles.value.splice(index, 1, updated)
+        }
+    };
 
     // 图片加载成功
-    const onImageLoad = (id: string, event: Event) => {
-      const imgElement = event.target as HTMLImageElement;
-      const article = articles.value.find(a => a.id === id);
+    const onImageLoad = (article, height) => {
       if (article) {
-        article.loaded = true;
-        article.skeleton = false
-        // 计算正确的高度
-        const updatedItem = calculateItemPosition({
-          ...article
-        });
-
-        // 更新数组
-        const index = articles.value.findIndex(a => a.id === id);
+        article.loaded = true
+        const newHeight = height
+        const updated = calculateItemPosition(article, newHeight)
+        const index = articles.value.findIndex(a => a.id === article.id)
         if (index > -1) {
-          articles.value.splice(index, 1, updatedItem);
+          articles.value.splice(index, 1, updated)
         }
-        resetLayout();
+        resetLayout()
       }
-    };
-    // 图片加载失败
-    const onImageError = (item) => {
-      // console.log('error ---> id ', item.id)
-      item.imageError = true; // 失败了就隐藏图片
-      item.skeleton = false
+    }
 
-      // 如果图片加载失败，可以尝试重新设置一个默认高度（可选）
-      const updatedItem = calculateItemPosition({ ...item });
-      const index = articles.value.findIndex(a => a.id === item.id);
+    const onImageError = (item: Article, height: number) => {
+      item.imageError = true
+      const newHeight = height
+      const updated = calculateItemPosition(item, newHeight)
+      const index = articles.value.findIndex(a => a.id === item.id)
       if (index > -1) {
-        articles.value.splice(index, 1, updatedItem);
+        articles.value.splice(index, 1, updated)
       }
       resetLayout()
     }
-
     const calculateLayoutParameters = () => {
       if (!container.value) return;
       const containerWidth = container.value.offsetWidth;
       columnWidth.value = (containerWidth - (props.columnCount - 1) * props.columnGap) / props.columnCount;
       columnsHeight.value = new Array(props.columnCount).fill(0);
     };
-    // 获取下方info高度
-    const getBottomInfoHeight = (id: string): number => {
-      const el = document.getElementById(`bottom-info-${id}`);
-      console.log('el', el)
-      if (!el) return 0;
-      return el?.offsetHeight || 0;
-    };
+
     // 计算每个item的位置 需要加上高度
-    const calculateItemPosition = (item: Article) => {
-      const minHeight = Math.min(...columnsHeight.value);
-      const columnIndex = columnsHeight.value.indexOf(minHeight);
+    const calculateItemPosition = (item: Article, height: number) => {
+      const minHeight = Math.min(...columnsHeight.value)
+      const columnIndex = columnsHeight.value.indexOf(minHeight)
+      const left = columnIndex * (columnWidth.value + props.columnGap)
+      const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.rowGap : 0)
+      columnsHeight.value[columnIndex] = top + height
+      listHeight.value = Math.max(...columnsHeight.value)
+      return { ...item, left, top }
+    }
 
-      const left = columnIndex * (columnWidth.value + props.columnGap);
-      const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.rowGap : 0);
-      const bottomInfoHeight = getBottomInfoHeight(item.id);
-      const newHeight = (item.height / item.width) * columnWidth.value + bottomInfoHeight;
-      columnsHeight.value[columnIndex] = top + newHeight;
-
-      // 更新容器整体高度（最大高度）
-      listHeight.value = Math.max(...columnsHeight.value);
-
-      return { ...item, left, top };
-    };
 
     const loadNextPage = async () => {
+      // 加载下一页之前要先拿到所有的高度压 怎么办
       if (loading.value || noMore.value) return;
       try {
         loading.value = true;
@@ -200,10 +178,9 @@ export default defineComponent({
         const newArticles: Article[] = [];
 
         data.forEach(item => {
-          const layout = calculateItemPosition(item); // 直接计算位置
+          // 高度如何获取
           newArticles.push({
             ...item,
-            ...layout,
             skeleton: false,
             loaded: false
           });
@@ -238,6 +215,11 @@ export default defineComponent({
 
     const resizeObserver = new ResizeObserver(() => {
       calculateLayoutParameters();
+      nextTick(() => {
+      cardRefs.value.forEach(card => {
+        card?.recalculate?.(); // 调用子组件的方法重新上报高度
+      });
+    });
       resetLayout()
     });
 
@@ -273,7 +255,8 @@ export default defineComponent({
       onImageLoad,
       onImageError,
       loadNextPage,
-      handleClick
+      handleClick,
+      onHeightReported,cardRefs
     };
   }
 });
@@ -351,6 +334,8 @@ export default defineComponent({
   align-items: center;
   font-size: 0.9em;
   color: #666;
+  // position: absolute
+  // bottom: 0
 }
 
 .article-container {
