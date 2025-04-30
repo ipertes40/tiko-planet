@@ -131,8 +131,9 @@ const bgColor = generateSoftColor()
 }
 
 .article-wrapper {
+    overflow: hidden
     position: relative;
-    border-radius: 16px;
+    border-radius: 12px 12px 0 0;
     overflow: hidden
 }
 
@@ -140,7 +141,6 @@ const bgColor = generateSoftColor()
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     background: #eee;
     transition: opacity 0.5s ease, filter 0.5s ease;
@@ -160,7 +160,6 @@ const bgColor = generateSoftColor()
     padding: 12px;
     background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
     color: white;
-    border-radius: 0 0 8px 8px;
     font-size: 12px;
     display: flex;
     align-items: center;
