@@ -20,6 +20,7 @@ const routes = [
             },
             title: '@ctitle(8, 20)',
             content: '@cparagraph(3, 8)',
+            userName: '@ctitle(3, 4)',
             width: function () {
               return Mock.mock('@integer(300, 800)')
             },

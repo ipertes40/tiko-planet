@@ -1,6 +1,6 @@
 <template>
   <div class="home-container" ref="container">
-    <ul v-infinite-scroll="loadNextPage" class="infinite-list">
+    <!-- <ul v-infinite-scroll="loadNextPage" class="infinite-list"> -->
       <div class="list-container" :style="{ height: `${listHeight}px` }">
         <div v-for="(article, index) in articles" :key="article.id" class="article-item" :style="{
           transform: `translate(${article.left}px, ${article.top}px)`,
@@ -19,10 +19,24 @@
                 <span>{{ article.title }}</span> <!-- 这里可以是自定义内容，比如标题 -->
               </div>
             </div>
+            <div class="bottom-info" :id="`bottom-info-${article.id}`">
+              <div class="left-part">
+                <div class="title">{{ article.title }}</div>
+                <div class="user-name">{{ article.userName }}</div>
+              </div>
+              <div class="right-part">
+
+              </div>
+            </div>
           </template>
         </div>
+        <div ref="trigger" class="observer-trigger">
+  <span v-if="loading">加载中...</span>
+  <span v-else-if="noMore">没有更多了</span>
+</div>
       </div>
-    </ul>
+    <!-- </ul> -->
+     
   </div>
 </template>
 
@@ -30,6 +44,7 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import type { PropType } from 'vue';
+// import Popover.vue from ''
 
 // 懒加载指令
 const lazyLoadDirective = {
@@ -59,7 +74,8 @@ type Article = {
   loaded?: boolean;
   skeleton?: boolean,
   imageError?: boolean,
-  preload?: boolean
+  userName?: string,
+  userId?: string
 };
 
 type FetchFunction = (page: number, pageSize: number) => Promise<{ data: Article[] }>;
@@ -77,7 +93,7 @@ export default defineComponent({
     columnGap: {
       type: Number,
       default: 20
-    },rowGap: {
+    }, rowGap: {
       type: Number,
       default: 20
     },
@@ -107,13 +123,10 @@ export default defineComponent({
 
     }
 
+    // 图片加载成功
     const onImageLoad = (id: string, event: Event) => {
       const imgElement = event.target as HTMLImageElement;
       const article = articles.value.find(a => a.id === id);
-
-      console.log('onImageSuccess--->', article.id)
-      console.log('onImageSuccess--->', article.title)
-
       if (article) {
         article.loaded = true;
         article.skeleton = false
@@ -130,33 +143,9 @@ export default defineComponent({
         resetLayout();
       }
     };
-
-    const calculateLayoutParameters = () => {
-      if (!container.value) return;
-      const containerWidth = container.value.offsetWidth;
-      columnWidth.value = (containerWidth - (props.columnCount - 1) * props.columnGap) / props.columnCount;
-      columnsHeight.value = new Array(props.columnCount).fill(0);
-    };
-
-    const calculateItemPosition = (item: Article) => {
-      const minHeight = Math.min(...columnsHeight.value);
-      const columnIndex = columnsHeight.value.indexOf(minHeight);
-
-      const left = columnIndex * (columnWidth.value + props.columnGap);
-      const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.rowGap : 0);
-
-      const newHeight = (item.height / item.width) * columnWidth.value;
-      columnsHeight.value[columnIndex] = top + newHeight;
-
-      // 更新容器整体高度（最大高度）
-      listHeight.value = Math.max(...columnsHeight.value);
-
-      return { ...item, left, top };
-    };
-
+    // 图片加载失败
     const onImageError = (item) => {
       // console.log('error ---> id ', item.id)
-      console.log('onImageError--->', item.id)
       item.imageError = true; // 失败了就隐藏图片
       item.skeleton = false
 
@@ -168,6 +157,36 @@ export default defineComponent({
       }
       resetLayout()
     }
+
+    const calculateLayoutParameters = () => {
+      if (!container.value) return;
+      const containerWidth = container.value.offsetWidth;
+      columnWidth.value = (containerWidth - (props.columnCount - 1) * props.columnGap) / props.columnCount;
+      columnsHeight.value = new Array(props.columnCount).fill(0);
+    };
+    // 获取下方info高度
+    const getBottomInfoHeight = (id: string): number => {
+      const el = document.getElementById(`bottom-info-${id}`);
+      console.log('el', el)
+      if (!el) return 0;
+      return el?.offsetHeight || 0;
+    };
+    // 计算每个item的位置 需要加上高度
+    const calculateItemPosition = (item: Article) => {
+      const minHeight = Math.min(...columnsHeight.value);
+      const columnIndex = columnsHeight.value.indexOf(minHeight);
+
+      const left = columnIndex * (columnWidth.value + props.columnGap);
+      const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.rowGap : 0);
+      const bottomInfoHeight = getBottomInfoHeight(item.id);
+      const newHeight = (item.height / item.width) * columnWidth.value + bottomInfoHeight;
+      columnsHeight.value[columnIndex] = top + newHeight;
+
+      // 更新容器整体高度（最大高度）
+      listHeight.value = Math.max(...columnsHeight.value);
+
+      return { ...item, left, top };
+    };
 
     const loadNextPage = async () => {
       if (loading.value || noMore.value) return;
@@ -185,92 +204,22 @@ export default defineComponent({
         }
         const newArticles: Article[] = [];
 
-data.forEach(item => {
-  const layout = calculateItemPosition(item); // 直接计算位置
-  newArticles.push({
-    ...item,
-    ...layout,
-    skeleton: false,
-    loaded: false
-  });
-});
+        data.forEach(item => {
+          const layout = calculateItemPosition(item); // 直接计算位置
+          newArticles.push({
+            ...item,
+            ...layout,
+            skeleton: false,
+            loaded: false
+          });
+        });
 
-articles.value.push(...newArticles);
-currentPage.value++;
-        // const getPositions = (item) => {
-        //   const minHeight = Math.min(...columnsHeight.value);
-        //   const columnIndex = columnsHeight.value.indexOf(minHeight);
+        articles.value.push(...newArticles);
+        currentPage.value++;
 
-        //   const left = columnIndex * (columnWidth.value + props.columnGap);
-        //   const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.columnGap : 0);
-
-        //   // 提前更新列高度（为骨架图预留空间）
-        //   const skeletonHeight = (item.height / item.width) * columnWidth.value;
-        //   columnsHeight.value[columnIndex] = top + skeletonHeight;
-
-        //   return { left, top };
-        // }
-
-        // // 更新容器整体高度
-        // listHeight.value = Math.max(...columnsHeight.value);
-        // const gridMap = [] as any
-        // // 2. 创建带有正确位置的骨架图
-        // data.forEach((item, index) => {
-        //   console.log('add1 ')
-        //   const layout = getPositions(item)
-        //   gridMap[index] = layout
-
-        //   const skeletonItem = {
-        //     ...item,
-        //     id: `skeleton-${item.id}`,
-        //     skeleton: true,
-        //     left: layout.left,  // 直接设置正确位置
-        //     top: layout.top
-        //   }
-        //   articles.value.push(skeletonItem);
-        // }
-
-        // );
-
-
-        // const preloadTasks = data.map((item, index) => {
-        //   const positionedItem = {
-        //     ...item,
-        //     left: gridMap[index].left,
-        //     top: gridMap[index].top,
-        //     // skeleton: true, 加上之后就不调用img了... 这样的话img的加载也就没了。
-        //     preload: false
-        //   };
-
-        //   const skeletonIndex = articles.value.findIndex(a => a.id === `skeleton-${item.id}`);
-        //   if (skeletonIndex > -1) {
-        //     articles.value.splice(skeletonIndex, 1, positionedItem);
-        //   }
-        //   return positionedItem;
-        // });
-        // await Promise.all(preloadTasks);
-        // currentPage.value++;
       } finally {
         loading.value = false;
       }
-    };
-
-    // 新增：重新计算所有列的高度
-    const recalculateColumnsHeight = () => {
-      columnsHeight.value = new Array(props.columnCount).fill(0);
-
-      articles.value.forEach(item => {
-        if (!item.skeleton) { // 只计算实际内容项
-          const columnIndex = Math.round(item.left! / (columnWidth.value + props.columnGap));
-          const itemBottom = item.top! + item.height!;
-
-          if (itemBottom > columnsHeight.value[columnIndex]) {
-            columnsHeight.value[columnIndex] = itemBottom;
-          }
-        }
-      });
-
-      listHeight.value = Math.max(...columnsHeight.value);
     };
 
     const setupObserver = () => {
@@ -283,7 +232,7 @@ currentPage.value++;
         });
       }, {
         root: null,
-        rootMargin: '100px',
+        rootMargin: '300px',
         threshold: 0.1
       });
 
@@ -294,10 +243,7 @@ currentPage.value++;
 
     const resizeObserver = new ResizeObserver(() => {
       calculateLayoutParameters();
-      columnsHeight.value = new Array(props.columnCount).fill(0);
-      articles.value = articles.value.map(item => {
-        return calculateItemPosition({ ...item },)
-      });
+      resetLayout()
     });
 
     const resetLayout = () => {
@@ -338,7 +284,11 @@ currentPage.value++;
 });
 </script>
 
-<style scoped>
+<style lang="stylus" scoped>
+
+.article-wrapper{
+  position: relative
+}
 .home-container {
   position: relative;
   margin: 0 auto;
@@ -470,5 +420,32 @@ currentPage.value++;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
   color: white;
   border-radius: 0 0 8px 8px;
+}
+
+.bottom-info{
+  display: flex
+  &:hover{
+    cursor: pointer
+  }
+  padding: 5px
+  .title{
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left
+  }
+  .user-name{
+    font-size: 11px;
+    // font-weight: 700;
+    text-align: left
+    &:hover{
+      text-decoration: underline;
+    }
+  }
+  .left-part{
+    flex:1
+  }
+  .right-part{
+    width: 30px
+  }
 }
 </style>
