@@ -1,42 +1,37 @@
 <template>
   <div class="home-container" ref="container">
     <!-- <ul v-infinite-scroll="loadNextPage" class="infinite-list"> -->
-      <div class="list-container" :style="{ height: `${listHeight}px` }">
-        <div v-for="(article, index) in articles" :key="article.id" class="article-item" :style="{
-          transform: `translate(${article.left}px, ${article.top}px)`,
-          width: `${columnWidth}px`
-        }">
-          <div :id="article.id" v-if="article.skeleton" class="skeleton-box"
-            :style="{ height: `${article.height / article.width * columnWidth}px` }">
+    <div class="list-container" :style="{ height: `${listHeight}px` }">
+      <div v-for="(article, index) in articles" :key="article.id" class="article-item" :style="{
+        transform: `translate(${article.left}px, ${article.top}px)`,
+        width: `${columnWidth}px`
+      }">
+        <div :style="{ height: `${(article.height / article.width) * columnWidth}px` }" class="article-wrapper">
+          <img v-lazy="article.image" :alt="article.title" class="article-image"
+            :class="{ loading: !article.loaded, error: article.imageError }" @load="onImageLoad(article.id, $event)"
+            @error="onImageError(article)" />
+          <!-- 蒙层 -->
+          <div class="overlay text-content" @click="handleClick(article.link)">
+            <span>{{ article.title }}</span> <!-- 这里可以是自定义内容，比如标题 -->
           </div>
-          <template v-else>
-            <div :style="{ height: `${(article.height / article.width) * columnWidth}px` }" class="article-wrapper">
-              <img v-lazy="article.image" :alt="article.title" class="article-image"
-                :class="{ loading: !article.loaded, error: article.imageError }" @load="onImageLoad(article.id, $event)"
-                @error="onImageError(article)" />
-              <!-- 蒙层 -->
-              <div class="overlay text-content" @click="handleClick(article.link)">
-                <span>{{ article.title }}</span> <!-- 这里可以是自定义内容，比如标题 -->
-              </div>
-            </div>
-            <div class="bottom-info" :id="`bottom-info-${article.id}`">
-              <div class="left-part">
-                <div class="title">{{ article.title }}</div>
-                <div class="user-name">{{ article.userName }}</div>
-              </div>
-              <div class="right-part">
-
-              </div>
-            </div>
-          </template>
         </div>
-        <div ref="trigger" class="observer-trigger">
-  <span v-if="loading">加载中...</span>
-  <span v-else-if="noMore">没有更多了</span>
-</div>
+        <div class="bottom-info" :id="`bottom-info-${article.id}`">
+          <div class="left-part">
+            <div class="title">{{ article.title }}</div>
+            <div class="user-name">{{ article.userName }}</div>
+          </div>
+          <div class="right-part">
+
+          </div>
+        </div>
       </div>
+      <div ref="trigger" class="observer-trigger">
+        <span v-if="loading">加载中...</span>
+        <span v-else-if="noMore">没有更多了</span>
+      </div>
+    </div>
     <!-- </ul> -->
-     
+
   </div>
 </template>
 
