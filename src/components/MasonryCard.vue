@@ -6,7 +6,7 @@
         <div :style="{
             height: `${(article.height / article.width) * columnWidth}px`, backgroundColor: !article.loaded ? bgColor : 'transparent',
         }" class="article-wrapper">
-            <img v-lazy="article.image" class="article-image" :class="{ loading: !article.loaded }"
+            <img v-lazy="article.image" class="article-image" :class="{ loading: !loaded && !article.loaded }"
                 @load="handleImageLoad" @error="handleImageError" />
             <!-- 蒙层 -->
             <!-- <div class="overlay text-content" @click="handleClick">
@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, defineEmits, onMounted, nextTick, defineExpose } from 'vue'
+import { defineProps, defineEmits, onMounted, nextTick, defineExpose, ref } from 'vue'
 type Article = {
     id: string;
     image: string;
@@ -56,8 +56,11 @@ const props = defineProps<{
         userName?: string
         userId?: string
     }
-    columnWidth: number
+    columnWidth: number,
+    index: number
 }>()
+
+const loaded = ref(false)
 
 const emit = defineEmits<{
     (e: 'image-load', id: string, height: number): void
@@ -66,11 +69,15 @@ const emit = defineEmits<{
     (e: 'height', article: Article, height: number): void;
 }>()
 const recalculate = () => {
-  const height = getBottomInfoHeight();
+  nextTick(()=>{
+    const height = getBottomInfoHeight();
   emit('height', props.article, height + (props.article.height / props.article.width) * props.columnWidth);
+  })
 };
 //   成功 传入最后的高度
 const handleImageLoad = (event: Event) => {
+    // 本地改掉
+    loaded.value = true 
     emit('image-load', props.article, getBottomInfoHeight())
 }
 
@@ -93,10 +100,12 @@ const generateSoftColor = () => {
 // 获取下方info高度
 const getBottomInfoHeight = (): number => {
     const el = document.getElementById(`bottom-info-${props.article.id}`);
-    console.log('el', el)
+    console.log(el?.offsetHeight)
     if (!el) return 0;
     return el?.offsetHeight || 0;
 };
+
+
 onMounted(() => {
     nextTick(() => {
         const height = getBottomInfoHeight()
@@ -110,7 +119,7 @@ const bgColor = generateSoftColor()
 
 </script>
 
-<style scoped>
+<style lang="stylus" scoped>
 .article-item {
     position: absolute;
     transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
@@ -119,6 +128,8 @@ const bgColor = generateSoftColor()
 
 .article-wrapper {
     position: relative;
+    border-radius: 16px;
+    overflow: hidden
 }
 
 .article-image {
@@ -153,17 +164,30 @@ const bgColor = generateSoftColor()
     height: 100%;
 }
 
-.bottom-info {
-    display: flex;
-    padding: 10px;
-}
-
-.title {
-    font-weight: bold;
-}
-
-.user-name {
+.bottom-info{
+  display: flex
+  &:hover{
+    cursor: pointer
+  }
+  padding: 5px
+  .title{
     font-size: 12px;
-    color: gray;
+    font-weight: 700;
+    text-align: left
+  }
+  .user-name{
+    font-size: 11px;
+    // font-weight: 700;
+    text-align: left
+    &:hover{
+      text-decoration: underline;
+    }
+  }
+  .left-part{
+    flex:1
+  }
+  .right-part{
+    width: 30px
+  }
 }
 </style>
