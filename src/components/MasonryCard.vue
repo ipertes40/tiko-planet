@@ -1,20 +1,22 @@
 <template>
-    <div class="article-item"   :class="{ moving: !article.left && !article.top && index != 0  }"
+    <!-- skeleton-box -->
+    <div class="article-item"   :class="{ moving: !article.left && !article.top && index != 0}"
     :style="{
         transform: `translate(${article.left}px, ${article.top}px)`,
         width: `${columnWidth}px`
     }">
         <div :style="{
             height: `${(article.height / article.width) * columnWidth}px`, backgroundColor: !article.loaded ? bgColor : 'transparent',
-        }" class="article-wrapper">
+        }" class="article-wrapper"
+         :class="{ skeleton: !loaded }">
             <img v-lazy="article.image" class="article-image" :class="{ loading: !loaded && !article.loaded }"
                 @load="handleImageLoad" @error="handleImageError" />
             <!-- 蒙层 -->
-            <!-- <div class="overlay text-content" @click="handleClick">
+            <div class="overlay text-content" @click="handleClick">
                 <span>{{ article.id }}</span>
-            </div> -->
+            </div>
         </div>
-        <div class="bottom-info" :id="`bottom-info-${article.id}`">
+        <div class="bottom-info" :id="`bottom-info-${article.id}`" v-if=" true || article.isShowBottom">
             <div class="left-part">
                 <div class="title">{{ article.title }}</div>
                 <div class="user-name">{{ article.userName }}</div>
@@ -39,7 +41,8 @@ type Article = {
     skeleton?: boolean,
     imageError?: boolean,
     userName?: string,
-    userId?: string
+    userId?: string,
+    isShowBottom?: boolean
 };
 const props = defineProps<{
     article: {
@@ -56,6 +59,7 @@ const props = defineProps<{
         imageError?: boolean
         userName?: string
         userId?: string
+        isShowBottom?:boolean
     }
     columnWidth: number,
     index: number
@@ -72,7 +76,7 @@ const emit = defineEmits<{
 const recalculate = () => {
   nextTick(()=>{
     const height = getBottomInfoHeight();
-  emit('height', props.article, height + (props.article.height / props.article.width) * props.columnWidth);
+    emit('height', props.article, height + (props.article.height / props.article.width) * props.columnWidth);
   })
 };
 //   成功 传入最后的高度
@@ -108,10 +112,8 @@ const getBottomInfoHeight = (): number => {
 
 
 onMounted(() => {
-    nextTick(() => {
-        const height = getBottomInfoHeight()
-        emit('height', props.article, height + (props.article.height / props.article.width) * props.columnWidth);
-    });
+    const height = getBottomInfoHeight()// 暂时弃用 这样会有样式问题
+    emit('height', props.article, height + (props.article.height / props.article.width) * props.columnWidth);
 });
 defineExpose({
   recalculate
@@ -158,7 +160,7 @@ const bgColor = generateSoftColor()
     left: 0;
     right: 0;
     padding: 12px;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.3));
     color: white;
     font-size: 12px;
     display: flex;
@@ -166,9 +168,29 @@ const bgColor = generateSoftColor()
     justify-content: center;
     height: 100%;
 }
+.skeleton {
+  background: #f0f0f0;
+  border-radius: 8px;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes skeleton-loading {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
 
 .bottom-info{
   display: flex
+  width: 100%;        /* 明确父元素宽度（或限制最大宽度） */
+
   &:hover{
     cursor: pointer
   }
@@ -176,7 +198,10 @@ const bgColor = generateSoftColor()
   .title{
     font-size: 12px;
     font-weight: 700;
-    text-align: left
+    text-align: left;
+    white-space: nowrap;       /* 不换行 */
+  overflow: hidden;          /* 隐藏超出部分 */
+  text-overflow: ellipsis;   /* 超出部分显示... */
   }
   .user-name{
     font-size: 11px;
@@ -187,10 +212,14 @@ const bgColor = generateSoftColor()
     }
   }
   .left-part{
+    min-width: 0;      /* 关键点：防止子项撑开 flex 容器 */
+
     flex:1
   }
   .right-part{
+    min-width: 30px
     width: 30px
+    flex-shrink: 0;
   }
 }
 </style>

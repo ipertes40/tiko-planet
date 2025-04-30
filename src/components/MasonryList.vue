@@ -18,7 +18,6 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import type { PropType } from 'vue';
-// import Popover.vue from ''
 import MasonryCard from '@/components/MasonryCard.vue';
 import debounce from 'lodash/debounce';
 
@@ -37,6 +36,10 @@ type Article = {
   userName?: string,
   userId?: string
 };
+
+const BOTTOM_HEIGHT_MAP = {
+  littleCard : 45
+}
 
 type FetchFunction = (page: number, pageSize: number) => Promise<{ data: Article[] }>;
 
@@ -131,8 +134,13 @@ export default defineComponent({
       const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.rowGap : 0)
       console.log("top=>", top)
       console.log("height=>", height)
-
-      columnsHeight.value[columnIndex] = top + height
+      // const default = Math.max(BOTTOM_HEIGHT_MAP.littleCard, height)
+      // debugger
+      const defaultHeight = item.height/item.width *columnWidth.value
+      const fil = BOTTOM_HEIGHT_MAP.littleCard-(height-defaultHeight) > 0 ? BOTTOM_HEIGHT_MAP.littleCard-(height-defaultHeight): 0
+      console.log('BOTTOM_HEIGHT_MAP.littleCard===>',BOTTOM_HEIGHT_MAP.littleCard)
+      console.log('fil===>', fil)
+      columnsHeight.value[columnIndex] = top + height + fil
       listHeight.value = Math.max(...columnsHeight.value)
       return { ...item, left, top }
     }
