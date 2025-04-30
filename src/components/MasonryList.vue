@@ -91,7 +91,7 @@ export default defineComponent({
       const updated = calculateItemPosition(article, height)
       const index = articles.value.findIndex(a => a.id === article.id)
       if (index > -1) {
-        articles.value.splice(index, 1, { ...updated, realHieght: height })
+        articles.value.splice(index, 1, { ...updated, realHeight: height })
       }
     };
     const debouncedLoadNextPage = debounce(() => {

@@ -1,5 +1,6 @@
 <template>
-    <div class="article-item" :style="{
+    <div class="article-item"   :class="{ moving: !article.left && !article.top && index != 0  }"
+    :style="{
         transform: `translate(${article.left}px, ${article.top}px)`,
         width: `${columnWidth}px`
     }">
@@ -124,6 +125,9 @@ const bgColor = generateSoftColor()
     position: absolute;
     transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     will-change: transform;
+    &.moving{
+        display: none
+    }
 }
 
 .article-wrapper {
