@@ -17,6 +17,7 @@
     "masonry-layout": "^4.2.2",
     "mockjs": "^1.1.0",
     "muuri": "^0.9.5",
+    "pinia": "^3.0.2",
     "resize-observer-polyfill": "^1.5.1",
     "stylus": "^0.64.0",
     "stylus-loader": "^8.1.1",

@@ -1,24 +1,29 @@
 <template>
-  <div class="home-container" ref="container">
+  <div class="pinterest-masonry" ref="container">
     <!-- <ul v-infinite-scroll="loadNextPage" class="infinite-list"> -->
-    <div class="list-container" :style="{ height: `${listHeight}px` }">
-      <MasonryCard v-for="(article, index) in articles" :key="article.id" :article="article" :columnWidth="columnWidth" :index="index"
+    <div class="masonry-container" :style="{ height: `${listHeight}px` }">
+      <MasonryCard v-for="(article, index) in articles" :key="article.id" :article="article" :columnWidth="columnWidth" :columnGap="columnGap" :index="index"
         ref="cardRefs" @image-load="onImageLoad" @image-error="onImageError" @click="handleClick"
         @height="onHeightReported" />
     </div>
     <!-- </ul> -->
-    <div ref="trigger" class="observer-trigger">
-      <span v-if="loading">加载中...</span>
-      <span v-else-if="noMore">没有更多了</span>
+    <div ref="trigger" class="load-trigger">
+      <div v-if="loading" class="loading-spinner">
+        <div class="spinner"></div>
+        <span>加载中...</span>
+      </div>
+      <div v-else-if="noMore" class="no-more">
+        <span>已经到底了</span>
+      </div>
     </div>
   </div>
 </template>
 
 
-<script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount, nextTick, watch, computed } from 'vue';
 import type { PropType } from 'vue';
-import MasonryCard from '@/components/MasonryCard.vue';
+import MasonryCard from './MasonryCard.vue';
 import debounce from 'lodash/debounce';
 
 type Article = {
@@ -34,390 +39,371 @@ type Article = {
   skeleton?: boolean,
   imageError?: boolean,
   userName?: string,
-  userId?: string
+  userId?: string,
+  description?: string,
+  realHeight?: number,
+  isHide?: boolean,
+  columnSpan?: number
 };
 
-const BOTTOM_HEIGHT_MAP = {
-  littleCard : 45
-}
+const CARD_BOTTOM_PADDING = 45; // 卡片底部信息区域高度
 
 type FetchFunction = (page: number, pageSize: number) => Promise<{ data: Article[] }>;
 
-export default defineComponent({
-  name: 'MasonryList',
-  components: {
-    MasonryCard
-  },
-  props: {
-    columnCount: {
-      type: Number,
-      default: 5
-    },
-    columnGap: {
-      type: Number,
-      default: 20
-    }, rowGap: {
-      type: Number,
-      default: 20
-    },
-    fetchData: {
-      type: Function as PropType<FetchFunction>,
-      required: true
-    },
-    pageSize: {
-      type: Number,
-      default: 10
-    }
-  },
-  setup(props) {
-    const container = ref<HTMLElement>();
-    const trigger = ref<HTMLElement>();
-    const articles = ref<Article[]>([]);
-    const loading = ref(false);
-    const noMore = ref(false);
-    const currentPage = ref(1);
-    const columnWidth = ref(0);
-    const columnsHeight = ref<number[]>([]);
-    const listHeight = ref(0);
-    let observer: IntersectionObserver | null = null;
-    const cardRefs = ref<any[]>([]);
+interface Props {
+  columnCount?: number;
+  columnGap?: number;
+  rowGap?: number;
+  fetchData: FetchFunction;
+  pageSize?: number;
+}
 
-    const handleClick = () => {
+const props = withDefaults(defineProps<Props>(), {
+  columnCount: 5,
+  columnGap: 16,
+  rowGap: 16,
+  pageSize: 10
+});
 
-    }
+const container = ref<HTMLElement>();
+const trigger = ref<HTMLElement>();
+const articles = ref<Article[]>([]);
+const loading = ref(false);
+const noMore = ref(false);
+const currentPage = ref(1);
+const columnWidth = ref(0);
+const columnsHeight = ref<number[]>([]);
+const listHeight = ref(0);
+let observer: IntersectionObserver | null = null;
+const cardRefs = ref<any[]>([]);
 
-    const pendingHeights = new Map<number, number>();
+// 计算属性：获取列间距
+const columnGap = computed(() => props.columnGap);
 
-    const onHeightReported = (article: Article, height: number) => {
-      
+const handleClick = () => {
+  // 点击处理已在MasonryCard中实现
+}
 
-      const updated = calculateItemPosition(article, height)
-      const index = articles.value.findIndex(a => a.id === article.id)
-      if (index > -1) {
-        articles.value.splice(index, 1, { ...updated, realHeight: height })
-      }
-    };
-    const debouncedLoadNextPage = debounce(() => {
-            if (!loading.value && !noMore.value) {
-        loadNextPage();
-      }
-    }, 300);
-    // 图片加载成功
-    const onImageLoad = (article, height) => {
-      
-    }
-
-    const onImageError = (item: Article, height: number) => {
-
-    }
-
-    const calculateLayoutParameters = () => {
-      
-
-      console.log('calculateLayoutParameters')
-      if (!container.value) return;
-      const containerWidth = container.value.offsetWidth;
-      columnWidth.value = (containerWidth - (props.columnCount - 1) * props.columnGap) / props.columnCount;
-      columnsHeight.value = new Array(props.columnCount).fill(0);
-    };
-
-    watch(columnsHeight,(val)=>{
-      console.log('val===>',val)
-    })
-
-    // 计算每个item的位置 需要加上高度
-    const calculateItemPosition = (item: Article, height: number) => {
-      
-      const minHeight = Math.min(...columnsHeight.value)
-      const columnIndex = columnsHeight.value.indexOf(minHeight)
-      const left = columnIndex * (columnWidth.value + props.columnGap)
-      const top = minHeight + (columnsHeight.value[columnIndex] > 0 ? props.rowGap : 0)
-      console.log("top=>", top)
-      console.log("height=>", height)
-      // const default = Math.max(BOTTOM_HEIGHT_MAP.littleCard, height)
-      // debugger
-      const defaultHeight = item.height/item.width *columnWidth.value
-      const fil = BOTTOM_HEIGHT_MAP.littleCard-(height-defaultHeight) > 0 ? BOTTOM_HEIGHT_MAP.littleCard-(height-defaultHeight): 0
-      console.log('BOTTOM_HEIGHT_MAP.littleCard===>',BOTTOM_HEIGHT_MAP.littleCard)
-      console.log('fil===>', fil)
-      columnsHeight.value[columnIndex] = top + height + fil
-      listHeight.value = Math.max(...columnsHeight.value)
-      return { ...item, left, top }
-    }
-
-
-    const loadNextPage = async () => {
-      
-
-      // 加载下一页之前要先拿到所有的高度压 怎么办
-      if (loading.value || noMore.value) return;
-      try {
-        loading.value = true;
-        const { data } = await props.fetchData(currentPage.value, props.pageSize);
-
-        if (data.length === 0) {
-          noMore.value = true;
-          return;
-        }
-
-        if (columnWidth.value === 0) {
-          console.log('columnWidth.value===>', columnWidth.value)
-          calculateLayoutParameters();
-        }
-        const newArticles: Article[] = [];
-
-        data.forEach(item => {
-          // 高度如何获取
-          newArticles.push({
-            ...item,
-            loaded: false
-          });
-        });
-        articles.value.push(...newArticles);
-        currentPage.value++;
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    const setupObserver = () => {
-      
-
-      if (observer) observer.disconnect();
-      observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          console.log('debouncedLoadNextPage')
-            debouncedLoadNextPage();
-        });
-      }, {
-        root: null,
-        rootMargin: '300px',
-        threshold: 0.1
-      });
-
-      if (trigger.value) {
-        observer.observe(trigger.value);
-      }
-    };
-
-    const previousWidth = ref(-1) // 保存上一次宽度
-    const widthChangeThreshold = 1 // 宽度变化超过1px才响应
-
-    const debouncedResizeHandler = debounce((entries: ResizeObserverEntry[]) => {
-      
-
-      entries.forEach(entry => {
-        // 获取当前实际宽度
-        const currentWidth = entry.contentRect.width
-
-        // 判断是否达到变化阈值
-        if (previousWidth.value!= -1 && Math.abs(currentWidth - previousWidth.value) > widthChangeThreshold) {
-          // alert('对对对')
-          console.log('宽度变化触发',
-            previousWidth.value, '→', currentWidth,
-            '变化量:', currentWidth - previousWidth.value
-          )
-
-          calculateLayoutParameters()
-          // nextTick(() => {
-          //   cardRefs.value.forEach(card => {
-          //     card?.recalculate?.()
-          //   })
-          // })
-          cardRefs.value.forEach(card => {
-              card?.recalculate?.()
-            })
-          // 更新记录值
-          previousWidth.value = currentWidth
-        } else {
-          previousWidth.value = 0
-        }
-      })
-    }, 100)
-
-    // 创建观察器时使用带 entries 的回调
-    const resizeObserver = new ResizeObserver(entries => {
-      debouncedResizeHandler(entries)
-    })
-
-    const resetLayout = (changedItem?: Article) => {
-      columnsHeight.value = new Array(props.columnCount).fill(0);
-      articles.value = articles.value.map(item => calculateItemPosition(item, item.realHeight));
-      // 保留现有列高
-    };
-
-    watch(articles, (val) => {
-      nextTick(() => {
-        cardRefs.value = [...cardRefs.value]; // 强制更新引用
-      });
-    },{ deep: true })
-
-    onMounted(() => {
-      if (container.value) {
-        resizeObserver.observe(container.value);
-      }
-      if (trigger.value) {
-        setupObserver();
-      }
-      // nextTick(calculateLayoutParameters);
-      calculateLayoutParameters()
-      debouncedLoadNextPage();
-    });
-
-    onBeforeUnmount(() => {
-      resizeObserver.disconnect();
-      observer?.disconnect();
-
-      debouncedResizeHandler.cancel(); // 使用 lodash 的 cancel 方法
-    });
-
-    return {
-      container,
-      trigger,
-      articles,
-      loading,
-      noMore,
-      columnWidth,
-      listHeight,
-      onImageLoad,
-      onImageError,
-      loadNextPage,
-      handleClick,
-      onHeightReported, cardRefs
-    };
+const onHeightReported = (article: Article, height: number) => {
+  const updated = calculateItemPosition(article, height)
+  const index = articles.value.findIndex(a => a.id === article.id)
+  if (index > -1) {
+    articles.value.splice(index, 1, { ...updated, realHeight: height })
   }
+};
+
+const debouncedLoadNextPage = debounce(() => {
+  if (!loading.value && !noMore.value) {
+    loadNextPage();
+  }
+}, 300);
+
+const debouncedRecalculateLayout = debounce(() => {
+  recalculateLayout();
+}, 100);
+
+const onImageLoad = (articleId: string, height: number) => {
+  // 图片加载完成后，防抖重新计算布局
+  const article = articles.value.find(a => a.id === articleId);
+  if (article) {
+    article.realHeight = height;
+    debouncedRecalculateLayout();
+  }
+}
+
+const onImageError = (article: Article, height: number) => {
+  // 图片加载错误时也需要重新计算
+  const foundArticle = articles.value.find(a => a.id === article.id);
+  if (foundArticle) {
+    foundArticle.realHeight = height;
+    debouncedRecalculateLayout();
+  }
+}
+
+const recalculateLayout = () => {
+  // 重置列高度
+  columnsHeight.value = new Array(props.columnCount).fill(0);
+  
+  // 重新计算所有已加载项目的位置
+  const updatedArticles = articles.value.map(article => {
+    if (article.realHeight) {
+      return calculateItemPosition(article, article.realHeight);
+    } else {
+      // 使用预估高度
+      const columnSpan = article.columnSpan || 1;
+      const itemWidth = columnSpan > 1 
+        ? columnWidth.value * columnSpan + (columnSpan - 1) * props.columnGap
+        : columnWidth.value;
+      const imageHeight = (article.height / article.width) * itemWidth;
+      const estimatedBottomHeight = article.isHide ? 0 : 
+        (article.title ? (article.userName ? 65 : 45) : 30);
+      const estimatedHeight = imageHeight + estimatedBottomHeight;
+      return calculateItemPosition(article, estimatedHeight);
+    }
+  });
+  
+  articles.value = updatedArticles;
+};
+
+const calculateLayoutParameters = () => {
+  if (!container.value) return;
+  const containerWidth = container.value.offsetWidth;
+  
+  // 计算列宽，确保有足够的间距
+  columnWidth.value = Math.floor((containerWidth - (props.columnCount - 1) * props.columnGap) / props.columnCount);
+  columnsHeight.value = new Array(props.columnCount).fill(0);
+  
+  console.log('布局参数:', {
+    containerWidth,
+    columnWidth: columnWidth.value,
+    columnCount: props.columnCount,
+    columnGap: props.columnGap
+  });
+};
+
+// 计算每个item的位置
+const calculateItemPosition = (item: Article, height: number) => {
+  const columnSpan = item.columnSpan || 1;
+  
+  // 对于跨列项目，需要找到连续的空间
+  let columnIndex = 0;
+  if (columnSpan > 1) {
+    let bestPosition = 0;
+    let minMaxHeight = Infinity;
+    
+    // 找到可以容纳跨列项目的最佳位置
+    for (let i = 0; i <= props.columnCount - columnSpan; i++) {
+      // 检查从第i列开始的连续columnSpan列的最大高度
+      let maxHeight = 0;
+      for (let j = i; j < i + columnSpan; j++) {
+        maxHeight = Math.max(maxHeight, columnsHeight.value[j]);
+      }
+      
+      // 选择最大高度最小的位置（即最靠上的位置）
+      if (maxHeight < minMaxHeight) {
+        minMaxHeight = maxHeight;
+        bestPosition = i;
+      }
+    }
+    
+    columnIndex = bestPosition;
+    console.log(`跨列项目${item.id}: 占${columnSpan}列, 最佳位置第${columnIndex}列, 最大高度=${minMaxHeight}px`);
+  } else {
+    // 单列项目，找最短的列
+    const minHeight = Math.min(...columnsHeight.value);
+    columnIndex = columnsHeight.value.indexOf(minHeight);
+  }
+  
+  // 计算位置
+  const left = columnIndex * (columnWidth.value + props.columnGap);
+  const top = columnSpan > 1 
+    ? Math.max(...columnsHeight.value.slice(columnIndex, columnIndex + columnSpan))
+    : columnsHeight.value[columnIndex];
+  
+  const finalTop = top + (top > 0 ? props.rowGap : 0);
+  
+  // 计算实际宽度和高度
+  const itemWidth = columnSpan > 1 
+    ? columnWidth.value * columnSpan + (columnSpan - 1) * props.columnGap
+    : columnWidth.value;
+  
+  const imageHeight = (item.height / item.width) * itemWidth;
+  const bottomHeight = item.isHide ? 0 : 45; // 底部信息高度
+  const totalHeight = height || (imageHeight + bottomHeight);
+  
+  console.log(`布局计算 - 项目${item.id}: ${columnSpan}列, 位置第${columnIndex}列, 宽度=${itemWidth}px, 高度=${totalHeight}px`);
+  
+  // 更新受影响的列高度
+  for (let i = columnIndex; i < columnIndex + columnSpan; i++) {
+    columnsHeight.value[i] = finalTop + totalHeight;
+  }
+  
+  listHeight.value = Math.max(...columnsHeight.value);
+  
+  return { ...item, left, top: finalTop };
+}
+
+const loadNextPage = async () => {
+  if (loading.value || noMore.value) return;
+  
+  try {
+    loading.value = true;
+    const { data } = await props.fetchData(currentPage.value, props.pageSize);
+
+    if (data.length === 0) {
+      noMore.value = true;
+      return;
+    }
+
+    if (columnWidth.value === 0) {
+      calculateLayoutParameters();
+    }
+
+    const newArticles: Article[] = data.map(item => ({
+      ...item,
+      loaded: false
+    }));
+
+    articles.value.push(...newArticles);
+    currentPage.value++;
+  } catch (error) {
+    console.error('加载数据失败:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const setupObserver = () => {
+  if (observer) observer.disconnect();
+  
+  observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        debouncedLoadNextPage();
+      }
+    });
+  }, {
+    root: null,
+    rootMargin: '200px',
+    threshold: 0.1
+  });
+
+  if (trigger.value) {
+    observer.observe(trigger.value);
+  }
+};
+
+const previousWidth = ref(-1);
+const widthChangeThreshold = 10; // 增加阈值，减少不必要的重新计算
+
+const debouncedResizeHandler = debounce((entries: ResizeObserverEntry[]) => {
+  entries.forEach(entry => {
+    const currentWidth = entry.contentRect.width;
+
+    if (previousWidth.value !== -1 && Math.abs(currentWidth - previousWidth.value) > widthChangeThreshold) {
+      console.log('容器宽度变化，重新计算布局');
+      calculateLayoutParameters();
+      
+      // 重新计算所有卡片位置
+      nextTick(() => {
+        cardRefs.value.forEach(card => {
+          card?.recalculate?.();
+        });
+      });
+    }
+    previousWidth.value = currentWidth;
+  });
+}, 150);
+
+const resizeObserver = new ResizeObserver(entries => {
+  debouncedResizeHandler(entries);
+});
+
+watch(articles, (val) => {
+  nextTick(() => {
+    cardRefs.value = [...cardRefs.value];
+  });
+}, { deep: true });
+
+watch(() => props.columnCount, (newCount, oldCount) => {
+  console.log('列数变化:', oldCount, '->', newCount);
+  if (newCount !== oldCount && container.value) {
+    // 重新计算布局参数
+    calculateLayoutParameters();
+    
+    // 如果有现有文章，重新计算它们的位置
+    if (articles.value.length > 0) {
+      nextTick(() => {
+        recalculateLayout();
+        
+        // 强制所有卡片重新计算
+        cardRefs.value.forEach(card => {
+          card?.recalculate?.();
+        });
+      });
+    }
+  }
+});
+
+onMounted(() => {
+  if (container.value) {
+    resizeObserver.observe(container.value);
+  }
+  setupObserver();
+  calculateLayoutParameters();
+  loadNextPage();
+});
+
+onBeforeUnmount(() => {
+  resizeObserver.disconnect();
+  observer?.disconnect();
+  debouncedResizeHandler.cancel();
+  debouncedLoadNextPage.cancel();
+  debouncedRecalculateLayout.cancel();
 });
 </script>
 
 <style lang="stylus" scoped>
-
-.article-wrapper{
-  position: relative
-  border-radius: 16px
-}
-.home-container {
-  // position: relative;
-  margin: 0 auto;
+.pinterest-masonry {
   width: 100%;
-  /* max-width: 1200px; */
-  // display: flex
+  margin: 0 auto;
 }
 
-.list-container {
+.masonry-container {
   position: relative;
   width: 100%;
   transition: height 0.3s ease;
 }
 
-.article-item {
-  position: absolute;
-  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: transform;
-}
-
-.article-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background: #eee;
-  transition: opacity 0.5s ease, filter 0.5s ease;
-}
-
-.article-image.loading {
-  opacity: 0.3;
-  filter: blur(5px);
-}
-
-.article-image:not(.loading) {
-  opacity: 1;
-  filter: none;
-}
-
-.overlay {
-  height: 100%;
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  padding: 1rem;
-  transform: translateY(-50%);
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-  color: white;
-  border-radius: 0 0 8px 8px;
-  font-size: 12px;
-  box-sizing: border-box;
-  max-height: 100%;
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  display: flex;
-}
-
-.observer-trigger {
+.load-trigger {
   width: 100%;
   height: 80px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 0.9em;
-  color: #666;
-  // position: absolute
-  // bottom: 0
+  margin-top: 24px;
 }
 
-.article-container {
+.loading-spinner {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #767676;
+  font-size: 14px;
 }
 
-.article-item {
-  background: #fff;
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 20px;
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #e1e1e1;
+  border-top: 2px solid #e60023;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.article-image {
-  width: 100%;
-  height: auto;
-  display: block;
-  object-fit: cover;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.text-content {
-  padding: 10px;
-}
-
-.infinite-list {
-  width: 100%;
-  padding: 0;
-}
-
-.skeleton-box {
-  background: #f0f0f0;
-  border-radius: 8px;
-  animation: skeleton-loading 1.5s ease-in-out infinite;
-  z-index: 1;
-}
-
-@keyframes skeleton-loading {
-
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-.loading-indicator {
+.no-more {
+  color: #767676;
+  font-size: 14px;
   text-align: center;
   padding: 20px;
-  color: #666;
 }
 
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .pinterest-masonry {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .pinterest-masonry {
+    padding: 0 12px;
+  }
+}
 </style>

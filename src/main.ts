@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import store from './store'
@@ -10,6 +11,7 @@ if (import.meta.env.MODE === 'development') {
   initMockService()
 }
 const app = createApp(App)
+const pinia = createPinia()
 
 // 注册无限滚动指令
 app.directive('infinite-scroll', ElInfiniteScroll)
@@ -32,6 +34,7 @@ app.directive('infinite-scroll', ElInfiniteScroll)
     }
   })
 
+app.use(pinia)
 app.use(store)
 app.use(router)
 app.mount('#app')

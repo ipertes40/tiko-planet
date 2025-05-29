@@ -1,0 +1,301 @@
+/* 深色主题变量 */
+:root.dark {
+  /* 背景色 */
+  --bg-primary: #121212;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #242424;
+  --bg-overlay: rgba(255, 255, 255, 0.05);
+  
+  /* 文字颜色 */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+  
+  /* 边框颜色 */
+  --border-color: rgba(255, 255, 255, 0.12);
+  
+  /* 阴影 */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  
+  /* 主题色 */
+  --primary-color: #e60023;
+  --primary-hover: #ad081b;
+  
+  /* 卡片背景 */
+  --card-bg: #1a1a1a;
+  --card-hover-bg: #242424;
+}
+
+/* 应用深色主题到全局 */
+:root.dark {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  
+  /* 基础元素样式 */
+  body, #app {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+  }
+  
+  /* 导航栏样式 */
+  .top-navigation {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+  
+  /* 详情页样式 */
+  .pin-detail-page {
+    background-color: var(--bg-primary);
+  }
+  
+  .detail-block {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-md);
+  }
+  
+  /* 瀑布流卡片样式 */
+  .masonry-item {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    
+    &:hover {
+      background-color: var(--card-hover-bg);
+    }
+  }
+  
+  /* 用户信息区域 */
+  .user-section {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+  
+  .user-avatar {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+  
+  /* 评论区样式 */
+  .comments-section {
+    background-color: var(--bg-secondary);
+  }
+  
+  .comment {
+    border-color: var(--border-color);
+  }
+  
+  .comment-avatar {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+  
+  /* 按钮样式 */
+  .nav-action {
+    color: var(--text-primary);
+    
+    &:hover {
+      background-color: var(--bg-overlay);
+    }
+  }
+  
+  .board-select-nav {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    
+    &:hover {
+      border-color: var(--text-secondary);
+    }
+    
+    option {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+  }
+  
+  /* 输入框样式 */
+  .comment-input {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    
+    &::placeholder {
+      color: var(--text-tertiary);
+    }
+    
+    &:focus {
+      border-color: var(--primary-color);
+      background-color: var(--bg-overlay);
+    }
+  }
+  
+  /* 图片预览窗口 */
+  .image-preview-overlay {
+    background-color: rgba(0, 0, 0, 0.95);
+  }
+  
+  .preview-controls {
+    background-color: var(--bg-secondary);
+  }
+  
+  /* 滚动条样式 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background-color: var(--bg-secondary);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    
+    &:hover {
+      background-color: var(--text-tertiary);
+    }
+  }
+  
+  /* 选中文本样式 */
+  ::selection {
+    background-color: var(--primary-color);
+    color: var(--text-primary);
+  }
+  
+  /* 图片容器 */
+  .main-image-wrapper {
+    background-color: var(--bg-secondary);
+  }
+  
+  /* 瀑布流布局 */
+  .left-masonry, .right-masonry {
+    background-color: var(--bg-primary);
+  }
+  
+  /* 加载更多按钮 */
+  .load-more {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    
+    &:hover {
+      background-color: var(--bg-overlay);
+    }
+  }
+  
+  /* 弹出菜单 */
+  .dropdown-menu {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-md);
+    
+    .dropdown-item {
+      color: var(--text-primary);
+      
+      &:hover {
+        background-color: var(--bg-overlay);
+      }
+    }
+  }
+  
+  /* 标签和徽章 */
+  .badge, .tag {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+  
+  /* 提示框 */
+  .tooltip {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  /* 模态框 */
+  .modal {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-lg);
+    
+    .modal-header {
+      border-bottom-color: var(--border-color);
+    }
+    
+    .modal-footer {
+      border-top-color: var(--border-color);
+    }
+  }
+}
+
+/* ArticleListPage 适配 */
+:root.dark .article-list-page {
+  background-color: var(--bg-primary);
+}
+
+:root.dark .debug-info {
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--text-secondary);
+}
+
+/* 瀑布流卡片样式 - MasonryCard.vue */
+:root.dark .pinterest-card {
+  /* .masonry-item 已经处理了背景和边框，这里主要处理内部元素 */
+}
+
+:root.dark .pinterest-card .card-container {
+  background-color: var(--card-bg); /* 确保容器背景也是暗色 */
+  box-shadow: var(--shadow-sm);
+}
+
+:root.dark .pinterest-card .card-container:hover {
+  box-shadow: var(--shadow-md);
+}
+
+:root.dark .pinterest-card .image-container {
+  background-color: var(--bg-tertiary); /* 图片加载时的骨架屏背景 */
+}
+
+:root.dark .pinterest-card .hover-overlay {
+  background-color: rgba(0, 0, 0, 0.5); /* 悬停遮罩层 */
+}
+
+:root.dark .pinterest-card .save-button,
+:root.dark .pinterest-card .more-options,
+:root.dark .pinterest-card .share-button,
+:root.dark .pinterest-card .link-button {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.1); /* 轻微的背景，使其可见 */
+}
+
+:root.dark .pinterest-card .save-button:hover,
+:root.dark .pinterest-card .more-options:hover,
+:root.dark .pinterest-card .share-button:hover,
+:root.dark .pinterest-card .link-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+:root.dark .pinterest-card .card-info {
+  background-color: var(--card-bg); /* 卡片信息区域背景 */
+  color: var(--text-primary);
+}
+
+:root.dark .pinterest-card .card-title {
+  color: var(--text-primary);
+}
+
+:root.dark .pinterest-card .user-info .user-avatar .avatar-placeholder {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+:root.dark .pinterest-card .user-info .user-name {
+  color: var(--text-secondary);
+}
+
+:root.dark .pinterest-card .user-info .user-name:hover {
+  color: var(--text-primary);
+} 

@@ -1,21 +1,31 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import ArticleListPage from '../views/ArticleListPage.vue'
 
-const routes: Array<RouteRecordRaw> = [
+const routes = [
   {
     path: '/',
     name: 'home',
-    component: ArticleListPage
+    component: () => import('../views/HomePage.vue')
   },
   {
-    path: '/oc/:id',
+    path: '/test',
+    name: 'test',
+    component: () => import('../views/ArticleListPage.vue')
+  },
+  {
+    path: '/oc/:id?',
     name: 'oc',
-    component: () => import(/* webpackChunkName: "about" */ '../views/OcPage.vue')
+    component: () => import('../views/OcPage.vue')
   },
   {
     path: '/article/:id',
     name: 'article',
     component: () => import(/* webpackChunkName: "about" */ '../views/WorldViewPage.vue')
+  },
+  {
+    path: '/pin/:id',
+    name: 'pin',
+    component: () => import('../views/PinDetailPage.vue')
   },
   {
     path: '/user/:id',
@@ -25,7 +35,7 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes
 })
 
